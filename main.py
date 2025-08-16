@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from agents import Agent, Runner, AsyncOpenAI, OpenAIChatCompletionsModel
 from agents.run import RunConfig
-from roadmap_tool import get_career_roadmap
+from game_tool import roll_dice, generate_event
 
 load_dotenv()
 client = AsyncOpenAI(
@@ -12,35 +12,35 @@ client = AsyncOpenAI(
 model = OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client)
 config = RunConfig(model=model, tracing_disabled=True)
 
-career_agent = Agent(
-    name = "CareerAgent",
-    instructions= "You ask about interests and suggest a caeer field.",
+narrator_agent = Agent(
+    name = "NarratorAgent",
+    instructions= "You narrate the adventure. Ask the player for choices.",
     model=model
 )
-skill_agent= Agent(
-    name="SkillAgent",
-    instructions= "You share the roadmap using the get_career_roadmanp tool.",
-    model=model
+monster_agent= Agent(
+    name="MonsterAgent",
+    instructions= "You handle monster encounters using roll dice and generate_event.",
+    model=model,
+    tools=[roll_dice, generate_event]
 )
-job_agent = Agent(
-    name = "JobAgent",
-    instructions= "You suggest job titles in the chosen career.",
+item_agent = Agent(
+    name = "ItemAgent",
+    instructions= "You provide the rewards or item for the player.",
     model=model
 )
 
 def main():
-    print("\U0001F393 Career Mentor Agent\n")
-    interest = input(" What are your interests? ")
+    print("\U0001F3AE Welcome to the Fantasy Game\n")
+    choice = input(" Do you enter the forest or turn back? ")
 
-    result1 =  Runner.run_sync(career_agent, interest, run_config=config)
-    field= result1.final_output.strip()
-    print("\n  Suggested Career:", field)
+    result1 =  Runner.run_sync(narrator_agent, choice, run_config=config)
+    print("\n  Story:", result1.final_output)
 
-    result2 =  Runner.run_sync(skill_agent, field, run_config=config)
-    print("\n  Required Skills:", result2.final_output)
+    result2 =  Runner.run_sync(monster_agent, "Start encounter", run_config=config)
+    print("\n  Encounter:", result2.final_output)
 
-    result3 =  Runner.run_sync(job_agent, field, run_config=config)
-    print("\n  Possible Jobs:", result3.final_output)
+    result3 =  Runner.run_sync(item_agent, "Give rewards", run_config=config)
+    print("\n  Rewards:", result3.final_output)
 
 if __name__ == "__main__":
     main()
